@@ -153,7 +153,7 @@ class ResultMetrics {
                   uint32_t threshold) {
         heavy_hitter_metric_.threshold = threshold;
 
-        auto ideal_data = const_cast<Ideal<FlowKeyType>&>(ideal).get_raw_data();
+        const auto& ideal_data = ideal.get_raw_data();
 
         if (ideal_data.empty()) {
             return;
@@ -169,8 +169,7 @@ class ResultMetrics {
         for (const auto& pair : ideal_data) {
             const auto& flow = pair.first;
             uint64_t true_count = pair.second;
-            uint64_t estimated_count =
-                const_cast<Sketch<FlowKeyType>&>(sketch).query(flow);
+            uint64_t estimated_count = sketch.query(flow);
 
             // 更新误差统计
             double absolute_error =
