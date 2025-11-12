@@ -286,6 +286,53 @@ PacketParser<FlowKeyType, SFINAE>::parse_pcap(
     return packets;
 }
 
+template <typename FlowKeyType, typename SFINAE>
+std::vector<typename PacketParser<FlowKeyType, SFINAE>::PacketVector>
+PacketParser<FlowKeyType, SFINAE>::parse_pcap_with_epochs(
+    const std::string& file_path, std::chrono::nanoseconds epoch) const {
+
+    PacketVector packets = parse_pcap(file_path);
+
+    // epoch 为 0 ，不切分
+    if (epoch == std::chrono::nanoseconds{0}) {
+        std::vector<PacketVector> result;
+        result.push_back(packets);
+        return result;
+    }
+
+    // 按 epoch 切分
+    std::vector<PacketVector> result;
+    if (packets.empty()) {
+        return result;
+    }
+
+    auto start_time = packets.front().timestamp;
+    result.emplace_back();
+    auto current_epoch_start = start_time;
+
+    // 遍历所有数据包，按时间窗口分组
+    for (const auto& packet : packets) {
+        auto offset = packet.timestamp - current_epoch_start;
+
+        // 新 epoch
+        while (offset >= epoch) {
+            current_epoch_start += epoch;
+            result.emplace_back();
+            offset = packet.timestamp - current_epoch_start;
+        }
+
+        result.back().push_back(packet);
+    }
+
+    // 移除空的epoch窗口
+    result.erase(
+        std::remove_if(result.begin(), result.end(),
+                      [](const PacketVector& pv) { return pv.empty(); }),
+        result.end());
+
+    return result;
+}
+
 // 显式实例化
 template class PacketParser<OneTuple>;
 template class PacketParser<TwoTuple>;

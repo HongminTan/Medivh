@@ -68,6 +68,8 @@ class PacketParser {
     using PacketVector = std::vector<PacketRecordType>;
 
     PacketVector parse_pcap(const std::string& file_path) const;
+    std::vector<PacketVector> parse_pcap_with_epochs(const std::string& file_path,
+                                                    std::chrono::nanoseconds epoch = std::chrono::nanoseconds{0}) const;
 
    private:
     // FlowKey提取函数
